@@ -13,7 +13,7 @@ AI YP'24 [Команда 10 | 5 Определение авторства тек
 ## Список членов команды
 
 * [Васильев Андрей Александрович](https://github.com/artfultom)
-* [Семенюк Дарья Андреевна](https://github.com/)
+* [Семенюк Дарья Андреевна](https://github.com/daskwin)
 * [Сушкова Дарья Сергеевна](https://github.com/DaryaSushkova)
 * [Черников Данила Андреевич](https://github.com/DAChernikov)
 
