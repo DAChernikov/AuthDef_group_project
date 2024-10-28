@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 import requests
 
 
-def parse(link, author):
+def parse_page(link, author):
     page = requests.get(link)
 
     data = BeautifulSoup(page.text, "html.parser")
@@ -51,33 +51,28 @@ def parse(link, author):
         print(f"Сохранен '{author_header} - {title_header}'")
 
 
-urls = [
-    'http://az.lib.ru/k/kuprin_a_i/',
-    'http://az.lib.ru/t/turgenew_i_s/',
-    'http://az.lib.ru/p/pushkin_a_s/',
-    'http://az.lib.ru/s/saltykow_m_e/',
-    'http://az.lib.ru/m/maminsibirjak_d/',
-    'http://az.lib.ru/k/karamzin_n_m/',
-    'http://az.lib.ru/l/lermontow_m_j/',
-    'http://az.lib.ru/d/dostoewskij_f_m/',
-    'http://az.lib.ru/e/esenin_s_a/',
-    'http://az.lib.ru/b/bunin_i_a/',
-    'http://az.lib.ru/b/blok_a_a/',
-    'http://az.lib.ru/c/chehow_a_p/',
-    'http://az.lib.ru/g/gogolx_n_w/',
-]
+def parse_authors():
+    urls = []
 
-for url in urls:
-    author_page = requests.get(url)
-    author_data = BeautifulSoup(author_page.text, "html.parser")
+    with open('urls.txt', 'r', encoding='UTF-8') as file:
+        while line := file.readline():
+            urls.append(line.rstrip())
 
-    author_name = author_data.find('title').text[17:].split('.')[0]
+    for url in urls:
+        author_page = requests.get(url)
+        author_data = BeautifulSoup(author_page.text, "html.parser")
 
-    a_tags = author_data.find('dl').find_all('a')
-    for a in a_tags:
-        href = a.get('href')
-        if href and href.startswith('text'):
-            try:
-                parse(url + href, author_name)
-            except Exception as e:
-                print(f"Ошибка в {url + href}", e)
+        author_name = author_data.find('title').text[17:].split('.')[0]
+
+        a_tags = author_data.find('dl').find_all('a')
+        for a in a_tags:
+            href = a.get('href')
+            if href and href.startswith('text'):
+                try:
+                    parse_page(url + href, author_name)
+                except Exception as e:
+                    print(f"Ошибка в {url + href}", e)
+
+
+if __name__ == '__main__':
+    parse_authors()
