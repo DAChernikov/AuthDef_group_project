@@ -9,7 +9,7 @@ KEY_ID = os.environ.get("KEY_ID")
 SECRET_ID = os.environ.get("SECRET_ID")
 
 
-def s3_upload():
+def s3_upload(file_names):
     session = boto3.session.Session()
 
     s3 = session.client(
@@ -20,9 +20,6 @@ def s3_upload():
         region_name='ru-cental1',
     )
 
-    dir_name = '../data/'
-    file_names = os.listdir(dir_name)
-
     for file_name in file_names:
         if file_name.endswith('.txt'):
             meta_filename = file_name[:-3] + 'json'
@@ -30,17 +27,15 @@ def s3_upload():
             with open(dir_name + meta_filename, "r", encoding="utf-8") as json_file:
                 json_data = json.load(json_file)
 
-            original_name = json_data['link'].split('/')[-1].replace('.shtml', '.txt')
+            folder = json_data['link'].split('/')[-2]
+            name = json_data['link'].split('/')[-1].replace('.shtml', '.txt')
+            original_name = f"{folder}_{name}"
 
             s3.upload_file(dir_name + file_name, BUCKET_NAME, original_name)
             print(f"Загружен {original_name} ({file_name})")
 
 
-def generate_meta_table():
-    dir_name = '../data/'
-    file_names = os.listdir(dir_name)
-    file_names.sort()
-
+def generate_meta_table(file_names):
     csv_data = [
         ['author', 'name', 'year', 'genres', 'annotation', 's3_link', 'local_link']
     ]
@@ -54,7 +49,9 @@ def generate_meta_table():
 
             title = json_data['title'].replace("'", '').replace('"', '')
 
-            original_name = json_data['link'].split('/')[-1].replace('.shtml', '.txt')
+            folder = json_data['link'].split('/')[-2]
+            name = json_data['link'].split('/')[-1].replace('.shtml', '.txt')
+            original_name = f"{folder}_{name}"
 
             annotation = json_data['annotation']
             if annotation:
@@ -76,5 +73,9 @@ def generate_meta_table():
 
 
 if __name__ == '__main__':
-    s3_upload()
-    generate_meta_table()
+    dir_name = '../data/'
+    files = os.listdir(dir_name)
+    files.sort()
+
+    s3_upload(files)
+    generate_meta_table(files)
