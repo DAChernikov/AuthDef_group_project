@@ -9,7 +9,7 @@ KEY_ID = os.environ.get("KEY_ID")
 SECRET_ID = os.environ.get("SECRET_ID")
 
 
-def s3_upload(file_names):
+def s3_upload(file_names, s3_dir):
     session = boto3.session.Session()
 
     s3 = session.client(
@@ -31,11 +31,11 @@ def s3_upload(file_names):
             name = json_data['link'].split('/')[-1].replace('.shtml', '.txt')
             original_name = f"{folder}_{name}"
 
-            s3.upload_file(dir_name + file_name, BUCKET_NAME, original_name)
-            print(f"Загружен {original_name} ({file_name})")
+            s3.upload_file(dir_name + file_name, BUCKET_NAME, s3_dir + original_name)
+            print(f"Загружен {s3_dir + original_name} ({file_name})")
 
 
-def generate_meta_table(file_names):
+def generate_meta_table(file_names, s3_dir):
     csv_data = [
         ['author', 'name', 'year', 'genres', 'annotation', 's3_link', 'local_link']
     ]
@@ -63,7 +63,7 @@ def generate_meta_table(file_names):
                 json_data['year'],
                 json_data['genres'],
                 annotation,
-                f"https://storage.yandexcloud.net/{BUCKET_NAME}/{original_name}",
+                f"https://storage.yandexcloud.net/{BUCKET_NAME}/{s3_dir + original_name}",
                 f"{dir_name}{file_name}"
             ])
 
@@ -74,8 +74,9 @@ def generate_meta_table(file_names):
 
 if __name__ == '__main__':
     dir_name = '../data/'
+    s3_dir_name = 'raw/'
     files = os.listdir(dir_name)
     files.sort()
 
-    s3_upload(files)
-    generate_meta_table(files)
+    s3_upload(files, s3_dir_name)
+    generate_meta_table(files, s3_dir_name)
