@@ -7,6 +7,8 @@
 
 ## Описание данных
 
+[dataset.md](https://github.com/DAChernikov/AuthDef_group_project/blob/main/dataset.md)
+
 ## Примеры использования сервиса
 
 ## Описание функционала сервиса/бота
