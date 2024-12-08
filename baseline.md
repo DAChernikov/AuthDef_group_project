@@ -2,7 +2,7 @@
 
 Основные расчеты приведены в ноутбуке - `notebooks/baseline_experiments.ipynb`
 
-Основной пайплайн лучшей модели в ноутбуке - 'notebooks/baseline_pipeline.ipynb'
+Основной пайплайн лучшей модели в ноутбуке - `notebooks/baseline_pipeline.ipynb`
 
 Базовый вариант ноутбука - `notebooks/baseline_notebook.ipynb`. 
 
