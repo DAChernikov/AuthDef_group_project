@@ -1,7 +1,24 @@
 from pydantic import BaseModel
 from typing import List, Dict, Union
+from fastapi import UploadFile
+import pandas as pd
 
 """Характеристика pydantic моделей, используемых в работе сервиса"""
+
+class DataProcessor:
+    @staticmethod
+    def parse_data(X: Union[str, list], y: Union[str, list] = None):
+        """
+        Парсит входные данные (CSV, список) в DataFrame и Series.
+        """
+        if isinstance(X, str):
+            X = pd.read_csv(X)
+        else:
+            X = pd.DataFrame(X)
+
+        if y:
+            y = pd.Series(y)
+        return X, y
 
 class ModelMetadata(BaseModel):
     """Метаданные модели, включая идентификатор и тип."""
@@ -29,34 +46,18 @@ class RemoveResponse(BaseModel):
 
 class FitRequest(BaseModel):
     """Запрос на обучение модели с данными и конфигурацией."""
-    X: list
-    y: list
+    X: Union[list, UploadFile]  # Данные можно передавать как список или файл
+    y: Union[list, None] = None  # Целевая переменная, если используется
     config: dict
 
 class FitResponse(BaseModel):
     """Ответ о статусе обучения модели."""
     message: str
 
-class LoadRequest(BaseModel):
-    """Запрос на загрузку модели по идентификатору."""
-    id: str
-
-class LoadResponse(BaseModel):
-    """Ответ о статусе загрузки модели."""
-    message: str
-
-class UnloadRequest(BaseModel):
-    """Запрос на выгрузку модели из памяти."""
-    id: str
-
-class UnloadResponse(BaseModel):
-    """Ответ о статусе выгрузки модели."""
-    message: str
-
 class PredictRequest(BaseModel):
     """Запрос на предсказание, включающий идентификатор модели и входные данные."""
     id: str
-    X: List[List[float]]
+    X: Union[List[List[float]], UploadFile]  # Данные можно передавать как список или файл
 
 class PredictionResponse(BaseModel):
     """Ответ с предсказаниями модели."""

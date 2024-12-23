@@ -1,29 +1,30 @@
-from fastapi import APIRouter, HTTPException
-from api_backend.services.model_history import load_model_history, save_model_history
-from sklearn.linear_model import LinearRegression, LogisticRegression
-import asyncio
-import pickle
-import os
+from fastapi import APIRouter, HTTPException, UploadFile, File
+from api_backend.services.model_history import (
+    load_model_history,
+    save_model_history,
+    save_model,
+    load_model as load_model_from_storage,
+    delete_model
+)
+from sklearn.linear_model import LogisticRegression
 from api_backend.serializers.serializers import *
 
 models = {}
 router = APIRouter()
 
 @router.post("/fit", response_model=List[FitResponse])
-async def fit(requests: List[FitRequest]):
+async def fit(requests: List[FitRequest], file: UploadFile = File(None)):
     """
     Обучение и сохранение модели на основе переданных конфигураций.
-    Сохраняет модель в хранилище (файловую систему), добавляет запись о модели в историю.
-    После обучения модель становится автоматически активной.
+    Принимает данные в формате List или CSV файл.
     """
     responses = []
     for request in requests:
         model_type = request.config["ml_model_type"]
         model_id = request.config["id"]
 
-        if model_type == "linear":
-            model = LinearRegression()
-        elif model_type == "logistic":
+        # Инициализация модели
+        if model_type == "logistic":
             model = LogisticRegression()
         else:
             responses.append(FitResponse(
@@ -31,14 +32,21 @@ async def fit(requests: List[FitRequest]):
             continue
 
         try:
-            await asyncio.sleep(60)  # Заглушка для требования к клиентской части дз
+            # Проверка, были ли переданы данные как CSV файл
+            if file:
+                df = pd.read_csv(file.file)
+                X = df.iloc[:, :-1].values.tolist()  # Признаки
+                y = df.iloc[:, -1].values.tolist()   # Целевая переменная
+            else:
+                # Если данных в файле нет, используем те, что пришли в теле запроса
+                X = request.X
+                y = request.y
 
-            model.fit(request.X, request.y)
-            models[model_id] = model
+            # Обучение модели
+            model.fit(X, y)
+            save_model(model_id, model)
 
-            with open(f"{model_id}.pkl", "wb") as f:
-                pickle.dump(model, f)
-
+            # Обновление истории
             history = load_model_history()
             history.append({"id": model_id, "type": model_type})
             save_model_history(history)
@@ -51,62 +59,36 @@ async def fit(requests: List[FitRequest]):
     return responses
 
 
-@router.post("/load", response_model=List[LoadResponse])
-async def load(request: LoadRequest):
-    """
-    Загрузка модели в пространство инференса (память) из хранилища (файловой системы).
-    """
-    model_id = request.id
-    try:
-        with open(f"{model_id}.pkl", "rb") as f:
-            models[model_id] = pickle.load(f)
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Model '{model_id}' not found")
-
-    return [LoadResponse(message=f"Model '{model_id}' loaded")]
-
-
-@router.get("/get_status", response_model=ModelStatusResponse)
-async def get_status():
-    """
-    Получение списка активных моделей в пространстве инференса.
-    """
-    history = load_model_history()
-    active_models = [model_id for model_id in models.keys() if model_id in [entry["id"] for entry in history]]
-
-    return ModelStatusResponse(status="Model Status Ready", models=active_models)
-
-
-@router.post("/unload", response_model=List[UnloadResponse])
-async def unload_model(request: UnloadRequest):
-    """
-    Удаление модели из пространства инференса (памяти).
-    """
-    model_id = request.id
-
-    if model_id not in models:
-        raise HTTPException(status_code=404, detail=f"Model '{model_id}' not found")
-
-    del models[model_id]
-
-    return [UnloadResponse(message=f"Model '{model_id}' unloaded")]
-
-
 @router.post("/predict", response_model=List[PredictionResponse])
-async def predict(requests: List[PredictRequest]):
+async def predict(requests: List[PredictRequest], file: UploadFile = File(None)):
     """
-    Создание предсказаний для данных с выбором активных моделей на платформе инференса.
+    Создание предсказаний. В момент вызова подгружается нужная модель по `model_id`.
+    Принимает данные в формате List или CSV файл.
     """
     responses = []
     for request in requests:
         model_id = request.id
-        if model_id not in models:
-            raise HTTPException(status_code=404, detail=f"Model '{model_id}' not found")
+        try:
+            # Если модель не загружена в память, подгружаем из файловой системы
+            if model_id not in models:
+                models[model_id] = load_model_from_storage(model_id)
 
-        model = models[model_id]
-        await asyncio.sleep(5)  # Заглушка для демонстрации асинхронности
-        predictions = model.predict(request.X).tolist()
-        responses.append(PredictionResponse(predictions=predictions))
+            model = models[model_id]
+
+            # Если пришел файл, то читаем его как CSV
+            if file:
+                df = pd.read_csv(file.file)
+                X = df.values.tolist()  # Все колонки — признаки
+            else:
+                X = request.X  # Используем данные, пришедшие в запросе
+
+            # Предсказания
+            predictions = model.predict(X).tolist()
+            responses.append(PredictionResponse(predictions=predictions))
+        except FileNotFoundError:
+            raise HTTPException(status_code=404, detail=f"Model '{model_id}' not found")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error during prediction: {str(e)}")
 
     return responses
 
@@ -116,27 +98,18 @@ async def list_models():
     """
     Возвращает список всех моделей (активных и заархивированных).
     """
-    model_type_map = {
-        LinearRegression: "linear",
-        LogisticRegression: "logistic"
-    }
-
-    models_in_memory = [
-        ModelMetadata(id=model_id, type=model_type_map.get(type(model), "unknown"))
+    active_models = [
+        ModelMetadata(id=model_id, type=model.__class__.__name__.lower())
         for model_id, model in models.items()
     ]
-
     history = load_model_history()
-    archive_models = []
-    for entry in history:
-        model_id = entry["id"]
-        model_type = entry["type"]
-        if model_id not in models and os.path.exists(f"{model_id}.pkl"):
-            archive_models.append(ModelMetadata(id=model_id, type=model_type))
+    archived_models = [
+        ModelMetadata(id=entry["id"], type=entry["type"])
+        for entry in history
+        if entry["id"] not in models
+    ]
 
-    all_models = models_in_memory + archive_models
-    return [ModelListResponse(models=all_models)]
-
+    return [ModelListResponse(models=active_models + archived_models)]
 
 
 @router.delete("/remove/{model_id}", response_model=List[RemoveResponse])
@@ -147,16 +120,17 @@ async def remove(model_id: str):
     if model_id in models:
         del models[model_id]
 
+    try:
+        delete_model(model_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Model '{model_id}' not found in storage")
+
+    # Удаление из истории
     history = load_model_history()
     history = [entry for entry in history if entry["id"] != model_id]
     save_model_history(history)
 
-    file_path = f"{model_id}.pkl"
-    if os.path.exists(file_path):
-        os.remove(file_path)
-        return [RemoveResponse(message=f"Model '{model_id}' removed.")]
-    else:
-        raise HTTPException(status_code=404, detail=f"Model '{model_id}' not found in storage.")
+    return [RemoveResponse(message=f"Model '{model_id}' removed")]
 
 
 @router.delete("/remove_all", response_model=List[RemoveResponse])
@@ -165,26 +139,22 @@ async def remove_all():
     Удаление всех моделей из памяти, файловой системы и истории обученных моделей.
     """
     removed_models = []
-    active_models = list(models.keys())
-    processed_models = set()
 
-    for model_id in active_models:
-        if model_id in models:
-            del models[model_id]
-        file_path = f"{model_id}.pkl"
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        removed_models.append(RemoveResponse(message=f"Model '{model_id}' removed"))
-        processed_models.add(model_id)
+    # Удаляем из памяти
+    for model_id in list(models.keys()):
+        del models[model_id]
 
-    model_files = [file for file in os.listdir() if file.endswith(".pkl")]
-    for file in model_files:
-        model_id = file[:-4]
-        if model_id not in processed_models:
-            os.remove(file)
+    # Удаляем из файловой системы
+    history = load_model_history()
+    for entry in history:
+        model_id = entry["id"]
+        try:
+            delete_model(model_id)
             removed_models.append(RemoveResponse(message=f"Model '{model_id}' removed"))
-            processed_models.add(model_id)
+        except FileNotFoundError:
+            continue
 
+    # Очищаем историю
     save_model_history([])
 
     if not removed_models:
