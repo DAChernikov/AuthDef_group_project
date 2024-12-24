@@ -8,6 +8,7 @@ from api_backend.services.model_history import (
 )
 from sklearn.linear_model import LogisticRegression
 from api_backend.serializers.serializers import *
+import json
 
 models = {}
 router = APIRouter()
@@ -46,7 +47,8 @@ async def fit_request(request: FitRequest):
 @router.post("/fit_csv", response_model=List[FitResponse])
 async def fit_csv(
     file: UploadFile = File(...),
-    target_column: str = Form(...)
+    target_column: str = Form(...),
+    config: str = Form(...)  # JSON строка с конфигурацией модели
 ):
     """
     Обучение модели на основе CSV файла. `target_column` указывает целевую переменную.
@@ -66,25 +68,27 @@ async def fit_csv(
         X = df.drop(columns=[target_column]).values.tolist()  # Все колонки, кроме целевой
         y = df[target_column].values.tolist()  # Целевая переменная
 
-        # Конфигурация модели
-        config = ModelConfig(
-            id="model_from_csv",
-            ml_model_type="logistic"
-        )
+        # Парсим конфигурацию модели
+        try:
+            parsed_config = ModelConfig(**json.loads(config))
+        except Exception as e:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid model configuration: {str(e)}"
+            )
+
+        model_type = parsed_config.ml_model_type
+        model_id = parsed_config.id
+
+        # Инициализация модели
+        if model_type == "logistic":
+            model = LogisticRegression(**parsed_config.hyperparameters)
+        else:
+            raise HTTPException(
+                status_code=400, detail=f"Unsupported model type: {model_type}"
+            )
     except Exception as e:
         raise HTTPException(
             status_code=400, detail=f"Failed to process CSV file: {str(e)}"
-        )
-
-    model_type = config.ml_model_type
-    model_id = config.id
-
-    # Инициализация модели
-    if model_type == "logistic":
-        model = LogisticRegression(**config.hyperparameters)
-    else:
-        raise HTTPException(
-            status_code=400, detail=f"Unsupported model type: {model_type}"
         )
 
     try:
@@ -102,28 +106,22 @@ async def fit_csv(
         raise HTTPException(status_code=500, detail=f"Training failed: {str(e)}")
 
 
-@router.post("/predict", response_model=List[PredictionResponse])
-async def predict(requests: List[PredictRequest], file: UploadFile = File(None)):
+@router.post("/predict_request", response_model=List[PredictionResponse])
+async def predict_request(requests: List[PredictRequest]):
     """
-    Создание предсказаний. В момент вызова подгружается нужная модель по `model_id`.
-    Принимает данные в формате List или CSV файл.
+    Создание предсказаний для данных, переданных в JSON формате.
     """
     responses = []
     for request in requests:
         model_id = request.id
         try:
-            # Если модель не загружена в память, подгружаем из файловой системы
+            # Подгрузка модели
             if model_id not in models:
                 models[model_id] = load_model_from_storage(model_id)
-
             model = models[model_id]
 
-            # Если пришел файл, то читаем его как CSV
-            if file:
-                df = pd.read_csv(file.file)
-                X = df.values.tolist()  # Все колонки — признаки
-            else:
-                X = request.X  # Используем данные, пришедшие в запросе
+            # Используем данные из запроса
+            X = request.X
 
             # Предсказания
             predictions = model.predict(X).tolist()
@@ -134,6 +132,32 @@ async def predict(requests: List[PredictRequest], file: UploadFile = File(None))
             raise HTTPException(status_code=500, detail=f"Error during prediction: {str(e)}")
 
     return responses
+
+@router.post("/predict_csv", response_model=PredictionResponse)
+async def predict_csv(
+    file: UploadFile = File(...),
+    model_id: str = Form(...)
+):
+    """
+    Создание предсказаний для данных, переданных в CSV файле.
+    """
+    try:
+        # Проверяем модель
+        if model_id not in models:
+            models[model_id] = load_model_from_storage(model_id)
+        model = models[model_id]
+
+        # Читаем CSV файл
+        df = pd.read_csv(file.file)
+        X = df.values.tolist()  # Все колонки — признаки
+
+        # Предсказания
+        predictions = model.predict(X).tolist()
+        return PredictionResponse(predictions=predictions)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Model '{model_id}' not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error during prediction: {str(e)}")
 
 
 @router.get("/list_models", response_model=List[ModelListResponse])
