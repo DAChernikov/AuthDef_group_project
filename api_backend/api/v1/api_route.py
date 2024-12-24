@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from api_backend.services.model_history import (
     load_model_history,
     save_model_history,
@@ -12,51 +12,94 @@ from api_backend.serializers.serializers import *
 models = {}
 router = APIRouter()
 
-@router.post("/fit", response_model=List[FitResponse])
-async def fit(requests: List[FitRequest], file: UploadFile = File(None)):
+@router.post("/fit_request", response_model=List[FitResponse])
+async def fit_request(request: FitRequest):
     """
-    Обучение и сохранение модели на основе переданных конфигураций.
-    Принимает данные в формате List или CSV файл.
+    Обучение модели на основе JSON-запроса.
     """
-    responses = []
-    for request in requests:
-        model_type = request.config["ml_model_type"]
-        model_id = request.config["id"]
+    model_type = request.config.ml_model_type
+    model_id = request.config.id
 
-        # Инициализация модели
-        if model_type == "logistic":
-            model = LogisticRegression()
-        else:
-            responses.append(FitResponse(
-                message=f"Model '{model_id}' unsupported type: {model_type}"))
-            continue
+    # Инициализация модели
+    if model_type == "logistic":
+        model = LogisticRegression(**request.config.hyperparameters)
+    else:
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported model type: {model_type}"
+        )
 
-        try:
-            # Проверка, были ли переданы данные как CSV файл
-            if file:
-                df = pd.read_csv(file.file)
-                X = df.iloc[:, :-1].values.tolist()  # Признаки
-                y = df.iloc[:, -1].values.tolist()   # Целевая переменная
-            else:
-                # Если данных в файле нет, используем те, что пришли в теле запроса
-                X = request.X
-                y = request.y
+    try:
+        # Обучение модели
+        model.fit(request.X, request.y)
+        save_model(model_id, model)
 
-            # Обучение модели
-            model.fit(X, y)
-            save_model(model_id, model)
+        # Обновление истории
+        history = load_model_history()
+        history.append({"id": model_id, "type": model_type})
+        save_model_history(history)
 
-            # Обновление истории
-            history = load_model_history()
-            history.append({"id": model_id, "type": model_type})
-            save_model_history(history)
+        return [FitResponse(message=f"Model '{model_id}' trained and saved")]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Training failed: {str(e)}")
 
-            responses.append(FitResponse(message=f"Model '{model_id}' trained and saved"))
-        except Exception as e:
-            responses.append(FitResponse(
-                message=f"Failed to train model '{model_id}': {str(e)}"))
 
-    return responses
+@router.post("/fit_csv", response_model=List[FitResponse])
+async def fit_csv(
+    file: UploadFile = File(...),
+    target_column: str = Form(...)
+):
+    """
+    Обучение модели на основе CSV файла. `target_column` указывает целевую переменную.
+    """
+    try:
+        # Читаем CSV файл
+        df = pd.read_csv(file.file)
+
+        # Проверяем наличие target_column
+        if not target_column or target_column not in df.columns:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid or missing 'target_column'. Available columns: {list(df.columns)}"
+            )
+
+        # Выделяем X и y
+        X = df.drop(columns=[target_column]).values.tolist()  # Все колонки, кроме целевой
+        y = df[target_column].values.tolist()  # Целевая переменная
+
+        # Конфигурация модели
+        config = ModelConfig(
+            id="model_from_csv",
+            ml_model_type="logistic"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=400, detail=f"Failed to process CSV file: {str(e)}"
+        )
+
+    model_type = config.ml_model_type
+    model_id = config.id
+
+    # Инициализация модели
+    if model_type == "logistic":
+        model = LogisticRegression(**config.hyperparameters)
+    else:
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported model type: {model_type}"
+        )
+
+    try:
+        # Обучение модели
+        model.fit(X, y)
+        save_model(model_id, model)
+
+        # Обновление истории
+        history = load_model_history()
+        history.append({"id": model_id, "type": model_type})
+        save_model_history(history)
+
+        return [FitResponse(message=f"Model '{model_id}' trained and saved")]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Training failed: {str(e)}")
 
 
 @router.post("/predict", response_model=List[PredictionResponse])

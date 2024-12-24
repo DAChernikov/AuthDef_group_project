@@ -29,7 +29,7 @@ class ModelConfig(BaseModel):
     """Конфигурация модели с гиперпараметрами."""
     id: str
     ml_model_type: str
-    hyperparameters: Dict[str, Union[str, int, bool, float]]
+    hyperparameters: Dict[str, Union[str, int, bool, float]] = {}
 
 class ModelStatusResponse(BaseModel):
     """Ответ сервиса с текущим статусом и списком активных моделей."""
@@ -46,9 +46,9 @@ class RemoveResponse(BaseModel):
 
 class FitRequest(BaseModel):
     """Запрос на обучение модели с данными и конфигурацией."""
-    X: Union[list, UploadFile]  # Данные можно передавать как список или файл
+    X: list  # Ожидаем, что данные подаются в виде списка
     y: Union[list, None] = None  # Целевая переменная, если используется
-    config: dict
+    config: ModelConfig
 
 class FitResponse(BaseModel):
     """Ответ о статусе обучения модели."""
