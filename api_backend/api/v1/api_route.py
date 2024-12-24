@@ -133,31 +133,37 @@ async def predict_request(requests: List[PredictRequest]):
 
     return responses
 
-@router.post("/predict_csv", response_model=PredictionResponse)
+@router.post("/predict_csv", response_model=List[PredictionResponse])
 async def predict_csv(
     file: UploadFile = File(...),
     model_id: str = Form(...)
 ):
     """
-    Создание предсказаний для данных, переданных в CSV файле.
+    Предсказание на основе CSV файла. Используется модель с указанным `model_id`.
     """
     try:
-        # Проверяем модель
-        if model_id not in models:
-            models[model_id] = load_model_from_storage(model_id)
-        model = models[model_id]
-
         # Читаем CSV файл
         df = pd.read_csv(file.file)
-        X = df.values.tolist()  # Все колонки — признаки
+        if df.empty:
+            raise HTTPException(status_code=400, detail="Provided CSV file is empty")
+
+        # Проверяем наличие модели
+        if model_id not in models:
+            models[model_id] = load_model_from_storage(model_id)
+
+        model = models[model_id]
+
+        # Преобразуем данные для предсказания
+        X = df.values.tolist()
 
         # Предсказания
         predictions = model.predict(X).tolist()
-        return PredictionResponse(predictions=predictions)
+
+        return [PredictionResponse(predictions=predictions)]
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"Model '{model_id}' not found")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error during prediction: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
 
 @router.get("/list_models", response_model=List[ModelListResponse])

@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 from typing import List, Dict, Union
-from fastapi import UploadFile
 import pandas as pd
 
 """Характеристика pydantic моделей, используемых в работе сервиса"""
@@ -57,7 +56,7 @@ class FitResponse(BaseModel):
 class PredictRequest(BaseModel):
     """Запрос на предсказание, включающий идентификатор модели и входные данные."""
     id: str
-    X: Union[List[List[float]], UploadFile]  # Данные можно передавать как список или файл
+    X: List[List[float]]
 
 class PredictionResponse(BaseModel):
     """Ответ с предсказаниями модели."""
