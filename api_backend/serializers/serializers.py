@@ -20,9 +20,10 @@ class DataProcessor:
         return X, y
 
 class ModelMetadata(BaseModel):
-    """Метаданные модели, включая идентификатор и тип."""
+    """Метаданные модели, включая идентификатор, тип и метрики."""
     id: str
     type: str
+    metrics: Dict[str, Union[float, List[List[int]]]] = {}
 
 class ModelConfig(BaseModel):
     """Конфигурация модели с гиперпараметрами."""
