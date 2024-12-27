@@ -52,7 +52,7 @@ def train_model(df, model_id, model_type, solver, max_iter):
             "id": model_id,
             "ml_model_type": model_type,
             "hyperparameters": {
-                "solver": "liblinear",
+                "solver": solver,
                 "max_iter": max_iter
             }
         })
