@@ -1,7 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel, ConfigDict
-from api_backend.api.v1.api_route import router as model_router
+from api.v1.api_route import router as model_router
 
 app = FastAPI(
     title="api_backend",
