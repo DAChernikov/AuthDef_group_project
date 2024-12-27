@@ -7,7 +7,15 @@ from constants import API_URL
 
 
 def models():
-    st.title("Список моделей")
+    st.header("Загрузка модели")
+
+    uploaded_file = st.file_uploader("Загрузить готовую модель", type=['pkl'])
+
+    if uploaded_file is not None:
+        # TODO сделать запрос для сохранения модели
+        st.success(f"Модель {uploaded_file.name} успешно загружена!")
+
+    st.header("Список моделей")
 
     try:
         response = requests.get(f"{API_URL}/api/v1/models/list_models")
@@ -43,7 +51,9 @@ def models():
     df = pd.DataFrame(models_data)
     st.dataframe(df)
 
-    selected_id = st.selectbox("Выберите строку по ID", df['Имя модели'])
+    st.header("Операции с моделями")
+
+    selected_id = st.selectbox("Выберите модель", df['Имя модели'])
 
     if st.button(f"Удалить {selected_id}"):
         try:
