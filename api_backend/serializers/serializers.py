@@ -54,6 +54,10 @@ class FitResponse(BaseModel):
     """Ответ о статусе обучения модели."""
     message: str
 
+class SaveResponse(BaseModel):
+    """Ответ о статусе сохранения модели."""
+    message: str
+
 class PredictRequest(BaseModel):
     """Запрос на предсказание, включающий идентификатор модели и входные данные."""
     id: str

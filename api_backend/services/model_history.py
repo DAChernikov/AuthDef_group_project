@@ -2,7 +2,7 @@ import json
 import os
 import pickle
 
-HISTORY_FILE = "model_history.json"  # Имя и путь файла-регистратора моделей
+HISTORY_FILE = "models_storage/model_history.json"  # Имя и путь файла-регистратора моделей
 MODEL_DIR = "models_storage"
 os.makedirs(MODEL_DIR, exist_ok=True)
 
