@@ -164,6 +164,29 @@ async def fit_csv(
         raise HTTPException(status_code=500, detail=f"Training failed: {str(e)}")
 
 
+@router.post("/save_model", response_model=List[SaveResponse])
+async def post_save_model(
+        file: UploadFile = File(...)
+):
+    """
+    Сохранение готовой модели.
+    """
+    try:
+        history = load_model_history()
+        history.append({
+            "id": file.filename,
+            "type": "pretrained",
+            "metrics": {}
+        })
+        save_model_history(history)
+        save_model(file.filename, file)
+
+        return [SaveResponse(message=f"Model '{file.filename}' saved")]
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail=f"Saving failed: {str(e)}")
+
+
 @router.post("/predict_request", response_model=List[PredictionResponse])
 async def predict_request(requests: List[PredictRequest]):
     """
