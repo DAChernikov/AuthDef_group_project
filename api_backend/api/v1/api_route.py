@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
-from api_backend.serializers.serializers import *
-from api_backend.services.model_history import (
+from serializers.serializers import *
+from services.model_history import (
     load_model_history,
     save_model_history,
     save_model,
