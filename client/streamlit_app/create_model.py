@@ -2,9 +2,12 @@ import io
 import json
 
 import requests
+import logging
 import streamlit as st
 
 from constants import API_URL
+
+logger = logging.getLogger(__name__)
 
 
 def create_model():
@@ -63,5 +66,6 @@ def train_model(df, model_id, model_type, solver, max_iter):
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        st.error(f"Ошибка при обучении модели: {str(e)}")
-        return None
+        logger.error(e)
+        st.error("Ошибка при обучении модели")
+        return
