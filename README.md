@@ -15,6 +15,12 @@
 
 ## Инструкция использования
 
+Запуск через docker compose:
+
+```
+docker compose up
+```
+
 ## Список членов команды
 
 * [Васильев Андрей Александрович](https://github.com/artfultom) (tg: @artfultom)
