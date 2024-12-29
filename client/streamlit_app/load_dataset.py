@@ -29,11 +29,6 @@ def display_data(df):
 def perform_eda(df):
     st.write("### Разведочный анализ данных (EDA)")
 
-    st.write("#### Основная информация")
-    buffer = io.StringIO()
-    df.info(buf=buffer)
-    st.text(buffer.getvalue())
-
     st.write("#### Статистическое описание")
     st.write(df.describe())
 

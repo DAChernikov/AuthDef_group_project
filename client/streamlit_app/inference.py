@@ -1,8 +1,11 @@
 import streamlit as st
 
 import requests
+import logging
 
 from constants import API_URL
+
+logger = logging.getLogger(__name__)
 
 
 def inference():
@@ -13,13 +16,15 @@ def inference():
         response.raise_for_status()
         models = response.json()
     except requests.exceptions.RequestException as e:
-        st.error(f"Ошибка при получении моделей: {e}")
-        models = []
+        logger.error(e)
+        st.error("Ошибка при получении данных")
+        return
 
     if models[0]['models']:
         model_ids = [model['id'] for model in models[0]['models']]
         selected_model_id = st.selectbox("Выберите модель", model_ids)
     else:
+        logger.warning("Cannot load the model")
         st.warning("Не удалось загрузить модели.")
         selected_model_id = None
 
@@ -43,6 +48,7 @@ def inference():
                     else:
                         st.error(f"Ошибка: {response.status_code}")
                 except requests.exceptions.RequestException as e:
-                    st.error(f"Ошибка при отправке запроса: {e}")
+                    logger.error(e)
+                    st.error("Ошибка при получении данных")
             else:
                 st.warning("Пожалуйста, введите текст.")
