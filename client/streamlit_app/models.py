@@ -10,7 +10,7 @@ def models():
     st.header("Загрузка модели")
 
     uploaded_file = st.file_uploader("Загрузить готовую модель", type=['pkl'])
-    uploaded_file_w2v = st.file_uploader("Загрузить w2v модель", type=['w2v'])
+    uploaded_file_w2v = st.file_uploader("Загрузить w2v модель", type=['pkl'])
 
     if uploaded_file is not None and uploaded_file_w2v is not None:
         file_content = uploaded_file.read()

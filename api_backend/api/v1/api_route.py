@@ -251,7 +251,10 @@ async def post_save_model(
             "type": "pretrained",
             "metrics": {}
         })
-        save_model_history(history)
+
+        if not file_name.endswith("w2v"):
+            save_model_history(history)
+
         save_model(file_name, file)
 
         return [SaveResponse(message=f"Model '{file_name}' saved")]
