@@ -4,7 +4,7 @@ import numpy as np
 from nltk.tokenize import word_tokenize, sent_tokenize
 import pymorphy3
 
-nltk.download('punkt')
+nltk.download('punkt_tab')
 
 morph = pymorphy3.MorphAnalyzer()
 
