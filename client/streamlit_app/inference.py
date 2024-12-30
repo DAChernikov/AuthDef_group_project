@@ -9,7 +9,14 @@ logger = logging.getLogger(__name__)
 
 
 def inference():
-    st.header('Определение авторства теста')
+    """
+    Функция для интерфейса Streamlit, который позволяет пользователю выбрать модель
+    для предсказания авторства текста и отправить текст для обработки.
+
+    В случае успешного запроса отобразится результат предсказания, в случае ошибки —
+    сообщение об ошибке.
+    """
+    st.header('Определение авторства текста')
 
     try:
         response = requests.get(f"{API_URL}/api/v1/models/list_models")
@@ -33,12 +40,10 @@ def inference():
 
         if st.button("Отправить"):
             if user_input:
-                payload = [
-                    {
-                        'text': user_input,
-                        'model_id': selected_model_id,
-                    }
-                ]
+                payload = [{  # Формируем объект, а не список
+                    "id": selected_model_id,
+                    "X": [user_input],  # Оборачиваем текст в список, как ожидает API
+                }]
 
                 try:
                     response = requests.post(f"{API_URL}/api/v1/models/predict_request", json=payload)
@@ -46,7 +51,7 @@ def inference():
                         st.success("Результат:")
                         st.json(response.json())
                     else:
-                        st.error(f"Ошибка: {response.status_code}")
+                        st.error(f"Ошибка: {response.status_code}\n{response.text}")
                 except requests.exceptions.RequestException as e:
                     logger.error(e)
                     st.error("Ошибка при получении данных")

@@ -10,25 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 def models():
-    st.header("Загрузка модели")
-
-    uploaded_file = st.file_uploader("Загрузить готовую модель", type=['pkl'])
-
-    if uploaded_file is not None:
-        logger.info("Model downloaded successfully")
-        file_content = uploaded_file.read()
-
-        files = {
-            'file': (uploaded_file.name, file_content, uploaded_file.type)
-        }
-
-        try:
-            response = requests.post(f"{API_URL}/api/v1/models/save_model", files=files)
-            response.raise_for_status()
-            logger.info("Model saved successfully")
-            st.success(f"Модель {uploaded_file.name} успешно загружена!")
-        except requests.exceptions.RequestException as e:
-            st.error(f"Ошибка при сохранении модели: {str(e)}")
+    """
+    Отображает список доступных моделей и позволяет выполнять операции с ними.
+    """
 
     st.header("Список моделей")
 
@@ -72,10 +56,15 @@ def models():
 
     selected_id = st.selectbox("Выберите модель", df['Имя модели'])
 
-    if st.button(f"Удалить {selected_id}"):
-        try:
-            response = requests.delete(f"{API_URL}/api/v1/models/remove/{selected_id}")
-            response.raise_for_status()
-            st.success(f"Модель {selected_id} успешно удалена!")
-        except requests.exceptions.RequestException as e:
-            st.error(f"Ошибка при удалении модели: {str(e)}")
+    protected_models = ["base_model"]
+
+    if selected_id in protected_models:
+        st.warning(f"Модель '{selected_id}' не может быть удалена.")
+    else:
+        if st.button(f"Удалить {selected_id}"):
+            try:
+                response = requests.delete(f"{API_URL}/api/v1/models/remove/{selected_id}")
+                response.raise_for_status()
+                st.success(f"Модель {selected_id} успешно удалена!")
+            except requests.exceptions.RequestException as e:
+                st.error(f"Ошибка при удалении модели: {str(e)}")
