@@ -46,8 +46,8 @@ class RemoveResponse(BaseModel):
 
 class FitRequest(BaseModel):
     """Запрос на обучение модели с данными и конфигурацией."""
-    X: list  # Ожидаем, что данные подаются в виде списка
-    y: Union[list, None] = None  # Целевая переменная, если используется
+    X: list
+    y: Union[list, None] = None
     config: ModelConfig
 
 class FitResponse(BaseModel):
@@ -61,8 +61,8 @@ class SaveResponse(BaseModel):
 class PredictRequest(BaseModel):
     """Запрос на предсказание, включающий идентификатор модели и входные данные."""
     id: str
-    X: List[List[float]]
+    X: List[str]
 
 class PredictionResponse(BaseModel):
     """Ответ с предсказаниями модели."""
-    predictions: List[float]
+    predictions: List[str]
