@@ -8,6 +8,13 @@ from constants import API_URL
 
 
 def create_model():
+    """
+    Интерфейс Streamlit для обучения модели.
+
+    Проверяет, загружены ли данные, и предоставляет форму для ввода параметров модели.
+    Если данные не загружены, выводится предупреждение.
+    В случае успешного обучения модели отображается сообщение с результатами.
+    """
     st.header("Обучение модели")
 
     if st.session_state.df is None:
@@ -41,6 +48,11 @@ def create_model():
 
 
 def train_model(df, model_id, model_type, solver, max_iter):
+    """
+    Обучает модель на основе переданных данных и гиперпараметров.
+
+    Отправляет данные и параметры на сервер для обучения модели и возвращает результат.
+    """
     csv_buffer = io.StringIO()
     df.to_csv(csv_buffer, index=False)
     csv_str = csv_buffer.getvalue()
