@@ -2,30 +2,56 @@ import streamlit as st
 
 import pandas as pd
 import requests
+import logging
 
 from constants import API_URL
+
+logger = logging.getLogger(__name__)
 
 
 def models():
     """
     Отображает список доступных моделей и позволяет выполнять операции с ними.
     """
+
+    st.header("Загрузка модели")
+
+    uploaded_file = st.file_uploader("Загрузить готовую модель", type=['pkl'])
+
+    if uploaded_file is not None:
+        logger.info("Model downloaded successfully")
+        file_content = uploaded_file.read()
+
+        files = {
+            'file': (uploaded_file.name, file_content, uploaded_file.type)
+        }
+
+        try:
+            response = requests.post(f"{API_URL}/api/v1/models/save_model", files=files)
+            response.raise_for_status()
+            logger.info("Model saved successfully")
+            st.success(f"Модель {uploaded_file.name} успешно загружена!")
+        except requests.exceptions.RequestException as e:
+            st.error(f"Ошибка при сохранении модели: {str(e)}")
+
     st.header("Список моделей")
 
     try:
         response = requests.get(f"{API_URL}/api/v1/models/list_models")
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
-        st.error(f"Ошибка при получении данных: {str(e)}")
+        logger.error(e)
+        st.error("Ошибка при получении данных")
         return
 
     models_data = []
 
-    if not response.json()[0]['models']:
+    response_json = response.json()
+    if not response_json[0]['models']:
         st.warning("Нет доступных моделей")
         return
 
-    for entry in response.json():
+    for entry in response_json:
         for model in entry["models"]:
             model_info = {
                 "Имя модели": model["id"],
