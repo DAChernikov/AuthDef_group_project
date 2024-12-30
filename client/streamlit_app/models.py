@@ -14,26 +14,6 @@ def models():
     Отображает список доступных моделей и позволяет выполнять операции с ними.
     """
 
-    st.header("Загрузка модели")
-
-    uploaded_file = st.file_uploader("Загрузить готовую модель", type=['pkl'])
-
-    if uploaded_file is not None:
-        logger.info("Model downloaded successfully")
-        file_content = uploaded_file.read()
-
-        files = {
-            'file': (uploaded_file.name, file_content, uploaded_file.type)
-        }
-
-        try:
-            response = requests.post(f"{API_URL}/api/v1/models/save_model", files=files)
-            response.raise_for_status()
-            logger.info("Model saved successfully")
-            st.success(f"Модель {uploaded_file.name} успешно загружена!")
-        except requests.exceptions.RequestException as e:
-            st.error(f"Ошибка при сохранении модели: {str(e)}")
-
     st.header("Список моделей")
 
     try:
