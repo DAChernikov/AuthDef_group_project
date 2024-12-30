@@ -2,9 +2,17 @@ import json
 import os
 import pickle
 
-HISTORY_FILE = "models_storage/model_history.json"  # Имя и путь файла-регистратора моделей
-MODEL_DIR = "models_storage"
-os.makedirs(MODEL_DIR, exist_ok=True)
+BASE_DIR = None
+MODEL_DIR = None
+HISTORY_FILE = None
+
+def init_paths(base_dir):
+    """Инициализирует пути для модели и истории."""
+    global BASE_DIR, MODEL_DIR, HISTORY_FILE
+    BASE_DIR = base_dir
+    MODEL_DIR = os.path.join(BASE_DIR, "models_storage")
+    HISTORY_FILE = os.path.join(MODEL_DIR, "model_history.json")
+    os.makedirs(MODEL_DIR, exist_ok=True)
 
 def load_model_history():
     """Загружает историю моделей из файла-регистратора."""
