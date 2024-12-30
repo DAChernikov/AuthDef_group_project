@@ -10,18 +10,32 @@ def models():
     st.header("Загрузка модели")
 
     uploaded_file = st.file_uploader("Загрузить готовую модель", type=['pkl'])
+    uploaded_file_w2v = st.file_uploader("Загрузить w2v модель", type=['w2v'])
 
-    if uploaded_file is not None:
+    if uploaded_file is not None and uploaded_file_w2v is not None:
         file_content = uploaded_file.read()
 
         files = {
             'file': (uploaded_file.name, file_content, uploaded_file.type)
         }
 
+        file_content_w2v = uploaded_file_w2v.read()
+
+        files_w2v = {
+            'file': (uploaded_file_w2v.name, file_content_w2v, uploaded_file_w2v.type)
+        }
+
         try:
             response = requests.post(f"{API_URL}/api/v1/models/save_model", files=files)
             response.raise_for_status()
             st.success(f"Модель {uploaded_file.name} успешно загружена!")
+        except requests.exceptions.RequestException as e:
+            st.error(f"Ошибка при сохранении модели: {str(e)}")
+
+        try:
+            response = requests.post(f"{API_URL}/api/v1/models/save_model", files=files_w2v)
+            response.raise_for_status()
+            st.success(f"Модель {uploaded_file_w2v.name} успешно загружена!")
         except requests.exceptions.RequestException as e:
             st.error(f"Ошибка при сохранении модели: {str(e)}")
 
