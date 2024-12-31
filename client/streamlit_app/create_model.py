@@ -2,12 +2,22 @@ import io
 import json
 
 import requests
+import logging
 import streamlit as st
 
 from constants import API_URL
 
+logger = logging.getLogger(__name__)
+
 
 def create_model():
+    """
+    Интерфейс Streamlit для обучения модели.
+
+    Проверяет, загружены ли данные, и предоставляет форму для ввода параметров модели.
+    Если данные не загружены, выводится предупреждение.
+    В случае успешного обучения модели отображается сообщение с результатами.
+    """
     st.header("Обучение модели")
 
     if st.session_state.df is None:
@@ -41,6 +51,11 @@ def create_model():
 
 
 def train_model(df, model_id, model_type, solver, max_iter):
+    """
+    Обучает модель на основе переданных данных и гиперпараметров.
+
+    Отправляет данные и параметры на сервер для обучения модели и возвращает результат.
+    """
     csv_buffer = io.StringIO()
     df.to_csv(csv_buffer, index=False)
     csv_str = csv_buffer.getvalue()
@@ -63,5 +78,6 @@ def train_model(df, model_id, model_type, solver, max_iter):
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        st.error(f"Ошибка при обучении модели: {str(e)}")
-        return None
+        logger.error(e)
+        st.error("Ошибка при обучении модели")
+        return

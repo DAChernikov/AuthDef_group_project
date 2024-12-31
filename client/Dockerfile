@@ -9,4 +9,4 @@ COPY streamlit_app .
 
 EXPOSE 8501
 
-CMD ["streamlit", "run", "main.py"]
+CMD ["streamlit", "run", "main.py", "--server.maxUploadSize=1024"]
