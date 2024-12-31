@@ -1,4 +1,4 @@
-/data/
+#/data/
 /.idea/
 /venv/
 /models_storage/
