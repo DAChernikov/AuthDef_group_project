@@ -9,9 +9,14 @@
 
 [dataset.md](https://github.com/DAChernikov/AuthDef_group_project/blob/main/dataset.md)
 
-## Примеры использования сервиса
+## EDA и описание baseline model
 
-## Описание функционала сервиса/бота
+Ноутбук с EDA - [EDA.ipynb](https://github.com/DAChernikov/AuthDef_group_project/blob/68f30f381c190bcf50eb58983107a7701f15f66b/notebooks/EDA.ipynb)
+Отчет по baseline - [baseline.md](https://github.com/DAChernikov/AuthDef_group_project/blob/68f30f381c190bcf50eb58983107a7701f15f66b/baseline.md)
+
+## Примеры использования сервиса и описание функционала
+
+[report.md](https://github.com/DAChernikov/AuthDef_group_project/blob/68f30f381c190bcf50eb58983107a7701f15f66b/report.md)
 
 ## Инструкция использования
 
