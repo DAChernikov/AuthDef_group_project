@@ -12,6 +12,7 @@
 ## EDA и описание baseline model
 
 Ноутбук с EDA - [EDA.ipynb](https://github.com/DAChernikov/AuthDef_group_project/blob/68f30f381c190bcf50eb58983107a7701f15f66b/notebooks/EDA.ipynb)
+
 Отчет по baseline - [baseline.md](https://github.com/DAChernikov/AuthDef_group_project/blob/68f30f381c190bcf50eb58983107a7701f15f66b/baseline.md)
 
 ## Примеры использования сервиса и описание функционала
