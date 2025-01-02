@@ -37,3 +37,4 @@ docker compose up
 ## Кураторы
 
 * [Малюшитский Кирилл Дмитриевич](https://github.com/malyushitsky) (tg: @malyushitsky)
+
