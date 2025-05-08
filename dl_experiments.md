@@ -13,6 +13,8 @@
 
 ## 2. Простые DL-модели
 
+[baseline_pipeline_v5.ipynb](notebooks/baseline_pipeline_v5.ipynb)[notebooks](notebooks)
+
 В рамках экспериментов с простыми DL-моделями были протестированы базовые архитектуры нейронных сетей:
 
 | Модель  | F1-мера | Accuracy | Комментарий                         |
@@ -26,6 +28,8 @@
 
 ## 3. BERT + XGBoost
 
+[BERT+XGBClassifier.ipynb](notebooks/BERT%2BXGBClassifier.ipynb)
+
 - Использовались эмбеддинги [CLS] токена из BERT
 - Классификатор: XGBoost
 
@@ -36,6 +40,8 @@
 **Вывод**: использование только [CLS]-токена не дало преимуществ. Модель сильно уступает нашей XGBoost и даже простым DL-подходам.
 
 ## 4. Fine-Tuning BERT (DeepPavlov/rubert-base-cased)
+
+[BERT_Fine_Tuning.ipynb](notebooks/BERT_Fine_Tuning.ipynb)
 
 - Использовался полный fine-tuning модели RuBERT
 - Применены техники регуляризации, OneCycleLR, ранняя остановка
