@@ -1,0 +1,44 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.YANDEX_SH_PRIVATE }}
+          port: 22
+          script: |
+            mkdir -p ./project
+            cd ./project
+            
+            if [ -d .git ]; then
+              echo "Repo already cloned, pulling latest changes..."
+              git reset --hard
+              git clean -fd
+              git pull https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git main
+            else
+              echo "Cloning repository..."
+              git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
+            fi
+
+            docker compose down || true
+
+            git pull origin master
+
+            docker compose build --no-cache
+            docker compose up -d
+
+            docker image prune -f
+
+            docker compose ps
